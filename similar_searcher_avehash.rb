@@ -15,15 +15,16 @@ def file_finder(path)
   arr
 end
 
+def pattern path
+  f = 16
+  tmp = '/tmp/imgmatch.xbm'
+  `convert -level 0%,75%,0.8 -fuzz 50% -trim -resize #{f}x#{f}! #{path} #{tmp}`
+  ptn = File.open(tmp).read.scan(/0x[\dA-F]{2}/).map{|n| n.hex.to_s(2).rjust(8, '0')}.join.split(//)
+  File.delete tmp
+  return ptn
+end
+
 def get_avehash_score file1,file2
-  def pattern path
-    f = 16
-    tmp = '/tmp/imgmatch.xbm'
-    `convert -level 0%,75%,0.8 -fuzz 50% -trim -resize #{f}x#{f}! #{path} #{tmp}`
-    ptn = File.open(tmp).read.scan(/0x[\dA-F]{2}/).map{|n| n.hex.to_s(2).rjust(8, '0')}.join.split(//)
-    File.delete tmp
-    return ptn
-  end
   a1 = pattern file1
   a2 = pattern file2
   a1.zip(a2).count{|n, m| n == m}.to_f / a1.size.to_f
@@ -48,25 +49,16 @@ i_arr.each do |i|
   p_result = ""
   a_result = ""
 
-#  img1 = Phashion::Image.new(i)
+  a1 = pattern i
   c_arr.each do |c|
-#    img2 = Phashion::Image.new(c)
-#    pHash_score = img1.mh_distance_from(img2)
-    aHash_score = get_avehash_score(i, c)
-    #if pHash_score > p_tmp
-    #  p_tmp = pHash_score
-    #  p_result = "#{i} #{c} #{p_tmp}"
-    #end
+    a2 = pattern c
+    aHash_score = a1.zip(a2).count{|n, m| n == m}.to_f / a1.size.to_f
     if aHash_score > a_tmp
       a_tmp = aHash_score
       a_result = "#{i} #{c} #{a_tmp}"
     end
   end
-  #p_output << p_result
   a_output << a_result
 end
-#puts "pHash:"
-#puts p_output
 puts "Average Hash:"
 puts a_output
-#puts ""
